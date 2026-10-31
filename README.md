@@ -40,4 +40,6 @@ Stack: `proyecto-web-iac`
 
 Repositorio: https://github.com/javierquinterocl/0192163-javier-quintero-iac-aws
 
-Sitio web: **http://IP_PUBLICA** (se actualiza tras el despliegue)
+Sitio web: **http://18.206.135.141** (versión 2 de la página)
+
+> La IP pública cambia cada vez que la instancia se recrea; el valor actual siempre aparece en la salida `WebsiteURL` del Stack y en el resumen de cada ejecución de GitHub Actions.
