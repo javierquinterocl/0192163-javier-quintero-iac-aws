@@ -1,0 +1,64 @@
+name: Despliegue de infraestructura AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  STACK_NAME: proyecto-web-iac
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validar la plantilla de CloudFormation
+        run: aws cloudformation validate-template --template-body file://templates/template.yaml
+
+      - name: Obtener subred y VPC
+        id: red
+        env:
+          SUBNET_ID: ${{ vars.SUBNET_ID }}
+        run: |
+          if [ -z "$SUBNET_ID" ]; then
+            echo "SUBNET_ID no definida: se usa una subred por defecto de la VPC por defecto"
+            SUBNET_ID=$(aws ec2 describe-subnets \
+              --filters Name=default-for-az,Values=true \
+              --query 'Subnets[0].SubnetId' --output text)
+          fi
+          VPC_ID=$(aws ec2 describe-subnets --subnet-ids "$SUBNET_ID" \
+            --query 'Subnets[0].VpcId' --output text)
+          echo "Subred: $SUBNET_ID  |  VPC: $VPC_ID"
+          echo "subnet_id=$SUBNET_ID" >> "$GITHUB_OUTPUT"
+          echo "vpc_id=$VPC_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Desplegar el Stack de CloudFormation
+        run: |
+          aws cloudformation deploy \
+            --template-file templates/template.yaml \
+            --stack-name "$STACK_NAME" \
+            --parameter-overrides \
+              SubnetId=${{ steps.red.outputs.subnet_id }} \
+              VpcId=${{ steps.red.outputs.vpc_id }} \
+            --no-fail-on-empty-changeset
+
+      - name: Mostrar salidas del Stack
+        run: |
+          aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].[StackStatus, Outputs]' --output table
+          URL=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text)
+          echo "### Sitio desplegado: $URL" >> "$GITHUB_STEP_SUMMARY"
