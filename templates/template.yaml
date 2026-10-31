@@ -54,7 +54,7 @@ Resources:
         - Key: Proyecto
           Value: proyecto-web-iac
 
-  WebServerInstance:
+  WebServerInstanceV2:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref LatestAmiId
@@ -67,11 +67,13 @@ Resources:
             - !Ref WebServerSecurityGroup
       Tags:
         - Key: Name
-          Value: EC2-Web-0192163-JavierQuintero
+          Value: EC2-WebV2-0192163-JQuintero
         - Key: Proyecto
           Value: proyecto-web-iac
         - Key: Version
-          Value: v1
+          Value: v2
+        - Key: Estudiante
+          Value: Javier Quintero Clavijo
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -87,20 +89,22 @@ Resources:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Javier Quintero - IaC en AWS</title>
             <style>
-              body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #1f2933; }
-              header { background: #232f3e; color: #ffffff; padding: 40px 24px; text-align: center; }
+              body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #0f172a; color: #e2e8f0; }
+              header { background: linear-gradient(135deg, #b91c1c, #7f1d1d); color: #ffffff; padding: 40px 24px; text-align: center; }
               header h1 { margin: 0 0 8px; font-size: 2rem; }
-              header p { margin: 0; color: #ff9900; font-weight: bold; }
+              header p { margin: 0; color: #fde68a; font-weight: bold; }
               main { max-width: 760px; margin: 32px auto; padding: 0 16px; }
-              .card { background: #ffffff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-              .card h2 { margin-top: 0; color: #232f3e; }
+              .card { background: #1e293b; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+              .card h2 { margin-top: 0; color: #f87171; }
+              a { color: #fbbf24; }
+              .tags span { display: inline-block; background: #334155; border-radius: 999px; padding: 4px 12px; margin: 4px; }
               footer { text-align: center; color: #6b7280; font-size: 0.9rem; padding: 24px; }
             </style>
           </head>
           <body>
             <header>
-              <h1>${InstanceDescription}</h1>
-              <p>Hola desde CloudFormation con GitHub Actions</p>
+              <h1>${InstanceDescription} - Pagina actualizada</h1>
+              <p>Version 2 desplegada automaticamente desde GitHub</p>
             </header>
             <main>
               <div class="card">
@@ -111,12 +115,18 @@ Resources:
                 <p><strong>Asignatura:</strong> Cloud Computing</p>
               </div>
               <div class="card">
+                <h2>Tecnologias usadas</h2>
+                <div class="tags"><span>AWS EC2</span><span>CloudFormation</span><span>GitHub Actions</span><span>Apache</span><span>User Data</span></div>
+              </div>
+              <div class="card">
                 <h2>Sobre este proyecto</h2>
                 <p>Esta pagina fue publicada automaticamente: GitHub Actions ejecuto una plantilla de
                 CloudFormation que creo la instancia EC2, el Security Group y este sitio mediante User Data.</p>
+                <p>Repositorio: <a href="https://github.com/javierquinterocl/0192163-javier-quintero-iac-aws">proyecto en GitHub</a> |
+                Universidad: <a href="https://ufpso.edu.co">UFPS Ocana</a></p>
               </div>
             </main>
-            <footer>Version 1 - Infraestructura como Codigo en AWS</footer>
+            <footer>Version 2 - Infraestructura como Codigo en AWS</footer>
           </body>
           </html>
           EOF
@@ -124,13 +134,13 @@ Resources:
 Outputs:
   InstanceId:
     Description: ID de la instancia EC2
-    Value: !Ref WebServerInstance
+    Value: !Ref WebServerInstanceV2
   PublicIP:
     Description: IP publica de la instancia
-    Value: !GetAtt WebServerInstance.PublicIp
+    Value: !GetAtt WebServerInstanceV2.PublicIp
   WebsiteURL:
     Description: URL del sitio web
-    Value: !Sub http://${WebServerInstance.PublicIp}
+    Value: !Sub http://${WebServerInstanceV2.PublicIp}
   SecurityGroupId:
     Description: ID del Security Group
     Value: !Ref WebServerSecurityGroup
