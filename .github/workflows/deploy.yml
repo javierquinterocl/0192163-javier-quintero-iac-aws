@@ -57,8 +57,10 @@ jobs:
 
       - name: Mostrar salidas del Stack
         run: |
+          echo "Estado del Stack: $(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
+            --query 'Stacks[0].StackStatus' --output text)"
           aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
-            --query 'Stacks[0].[StackStatus, Outputs]' --output table
+            --query 'Stacks[0].Outputs' --output table
           URL=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" \
             --query "Stacks[0].Outputs[?OutputKey=='WebsiteURL'].OutputValue" --output text)
           echo "### Sitio desplegado: $URL" >> "$GITHUB_STEP_SUMMARY"
