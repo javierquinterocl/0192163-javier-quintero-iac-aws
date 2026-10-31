@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Proyecto IaC - Servidor web Apache en EC2 desplegado con GitHub Actions y
+  CloudFormation. Javier Quintero Clavijo - 0192163 - UFPS Ocana.
+
+Parameters:
+  SubnetId:
+    Description: Subred publica donde se lanza la instancia (variable SUBNET_ID de GitHub)
+    Type: AWS::EC2::Subnet::Id
+
+  VpcId:
+    Description: VPC a la que pertenece la subred (el workflow la calcula automaticamente)
+    Type: AWS::EC2::VPC::Id
+
+  InstanceType:
+    Description: Tipo de instancia EC2
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+
+  LatestAmiId:
+    Description: AMI mas reciente de Amazon Linux 2023 (se resuelve desde SSM)
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+  InstanceDescription:
+    Description: Descripcion del servidor web
+    Type: String
+    Default: Servidor Web Apache
+
+  SecurityGroupDescription:
+    Description: Descripcion del Security Group
+    Type: String
+    Default: Acceso HTTP al servidor web
+
+Resources:
+
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref SecurityGroupDescription
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP publico (no se habilita SSH)
+      Tags:
+        - Key: Name
+          Value: SG-HTTP-0192163
+        - Key: Proyecto
+          Value: proyecto-web-iac
+
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          SubnetId: !Ref SubnetId
+          AssociatePublicIpAddress: true
+          GroupSet:
+            - !Ref WebServerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: EC2-Web-0192163-JavierQuintero
+        - Key: Proyecto
+          Value: proyecto-web-iac
+        - Key: Version
+          Value: v1
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          dnf update -y
+          dnf install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          cat > /var/www/html/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Javier Quintero - IaC en AWS</title>
+            <style>
+              body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f6f8; color: #1f2933; }
+              header { background: #232f3e; color: #ffffff; padding: 40px 24px; text-align: center; }
+              header h1 { margin: 0 0 8px; font-size: 2rem; }
+              header p { margin: 0; color: #ff9900; font-weight: bold; }
+              main { max-width: 760px; margin: 32px auto; padding: 0 16px; }
+              .card { background: #ffffff; border-radius: 10px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+              .card h2 { margin-top: 0; color: #232f3e; }
+              footer { text-align: center; color: #6b7280; font-size: 0.9rem; padding: 24px; }
+            </style>
+          </head>
+          <body>
+            <header>
+              <h1>${InstanceDescription}</h1>
+              <p>Hola desde CloudFormation con GitHub Actions</p>
+            </header>
+            <main>
+              <div class="card">
+                <h2>Estudiante</h2>
+                <p><strong>Nombre:</strong> Javier Quintero Clavijo</p>
+                <p><strong>Codigo:</strong> 0192163</p>
+                <p><strong>Programa:</strong> Ingenieria de Sistemas - UFPS Ocana</p>
+                <p><strong>Asignatura:</strong> Cloud Computing</p>
+              </div>
+              <div class="card">
+                <h2>Sobre este proyecto</h2>
+                <p>Esta pagina fue publicada automaticamente: GitHub Actions ejecuto una plantilla de
+                CloudFormation que creo la instancia EC2, el Security Group y este sitio mediante User Data.</p>
+              </div>
+            </main>
+            <footer>Version 1 - Infraestructura como Codigo en AWS</footer>
+          </body>
+          </html>
+          EOF
+
+Outputs:
+  InstanceId:
+    Description: ID de la instancia EC2
+    Value: !Ref WebServerInstance
+  PublicIP:
+    Description: IP publica de la instancia
+    Value: !GetAtt WebServerInstance.PublicIp
+  WebsiteURL:
+    Description: URL del sitio web
+    Value: !Sub http://${WebServerInstance.PublicIp}
+  SecurityGroupId:
+    Description: ID del Security Group
+    Value: !Ref WebServerSecurityGroup
