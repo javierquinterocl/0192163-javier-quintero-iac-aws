@@ -1,7 +1,5 @@
 # 0192163-javier-quintero-iac-aws
 
-Proyecto de Infraestructura como Código (IaC) para la asignatura **Cloud Computing** — Ingeniería de Sistemas, UFPS Ocaña.
-
 **Estudiante:** Javier Quintero Clavijo — 0192163
 **Docente:** Wilder Andrés Duarte Neira
 
@@ -39,7 +37,3 @@ Cada `push` a la rama `main` ejecuta un flujo de GitHub Actions que despliega co
 Stack: `proyecto-web-iac`
 
 Repositorio: https://github.com/javierquinterocl/0192163-javier-quintero-iac-aws
-
-Sitio web: **http://18.206.135.141** (versión 2 de la página)
-
-> La IP pública cambia cada vez que la instancia se recrea; el valor actual siempre aparece en la salida `WebsiteURL` del Stack y en el resumen de cada ejecución de GitHub Actions.
